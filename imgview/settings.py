@@ -56,12 +56,18 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'imgview.wsgi.application'
 
-SECRET_KEY=os.environ.get('SECRET_KEY')
+#SECRET_KEY=os.environ.get('SECRET_KEY')
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default=os.environ.get('DATABASE_URL')
-    )
+    'default': {
+            'ENGINE': 'django.db.backends.postgresql' ,
+            'NAME': os.environ.get('DB_NAME'),
+            'USER': os.environ.get('DB_USER'),
+            'HOST': os.environ.get('DB_HOST'),
+            'PASSWORD': os.environ.get('DB_PASSWORD'),
+            'PORT': os.environ.get('DB_PORT')
+    }
 }
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -127,5 +133,6 @@ EMAIL_BACKEND='django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST='smtp.gmail.com'
 EMAIL_PORT=587
 EMAIL_USE_TLS=True
+
 EMAIL_HOST_USER=os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD=os.environ.get('EMAIL_HOST_PASSWORD')
