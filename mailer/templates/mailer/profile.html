@@ -8,8 +8,8 @@
         
         <div class="row">
             <div class="col-md-4">
-                {% if profile.profile_picture %}
-                    <img src="{{ profile.profile_picture.url}}" alt="Profile Picture" class="img-fluid rounded-circle">
+                {% if profile_picture_url  %}
+                    <img src="{{profile_picture_url }}" alt="Profile Picture" class="img-fluid rounded-circle">
                 {% else %}
                     <div class="text-center">
                         <p class="text-muted">No profile picture available.</p>
