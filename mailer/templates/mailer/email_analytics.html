@@ -5,29 +5,35 @@
 
 {% block content %}
 <h2>Email Analytics</h2>
-<table class="table">
-    <thead>
+<table class="table table-hover table-striped">
+    <thead class="thead-light">
         <tr>
-            <th>Recipient</th>
-            <th>Subject</th>
-            <th>Opened</th>
-            <th>Opened At</th>
-            <th>Clicked</th>
-            <th>Clicked At</th>
+            <th style="width: 25%;">Recipient</th>
+            <th style="width: 25%;">Subject</th>
+            <th style="width: 15%;">Opened</th>
+            <th style="width: 15%;">Opened At</th>
+            <th style="width: 10%;">Clicked</th>
+            <th style="width: 10%;">Clicked At</th>
         </tr>
     </thead>
     <tbody>
         {% for email in emails %}
-        {% for tracking in email.emailtracking_set.all %}
-        <tr>
-            <td>{{ email.recipient }}</td>
-            <td>{{ email.subject }}</td>
-            <td>{{ tracking.opened|yesno:"Yes,No" }}</td>
-            <td>{{ tracking.opened_at }}</td>
-            <td>{{ tracking.clicked|yesno:"Yes,No" }}</td>
-            <td>{{ tracking.clicked_at }}</td>
-        </tr>
-        {% endfor %}
+        {% if email.emailtracking_set.exists %}
+            {% for tracking in email.emailtracking_set.all %}
+            <tr>
+                <td>{{ email.recipient }}</td>
+                <td>{{ email.subject }}</td>
+                <td>{{ tracking.opened|yesno:"Yes,No" }}</td>
+                <td>{{ tracking.opened_at|default:"N/A" }}</td>
+                <td>{{ tracking.clicked|yesno:"Yes,No" }}</td>
+                <td>{{ tracking.clicked_at|default:"N/A" }}</td>
+            </tr>
+            {% endfor %}
+        {% else %}
+            <tr>
+                <td colspan="6" style="text-align: center;">No tracking data available.</td>
+            </tr>
+        {% endif %}
         {% endfor %}
     </tbody>
 </table>

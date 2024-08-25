@@ -21,6 +21,7 @@
             <td style="padding: 10px;">{{ email.recipient }}</td>
             <td style="padding: 10px;">{{ email.sent_at }}</td>
             <td style="padding: 10px; text-align: center;">
+                <!-- Star email action -->
                 <a href="{% url 'star_email' email.id %}" class="btn btn-sm" style="background-color: transparent; border: none;">
                     {% if email.starred %}
                     <i class="fas fa-star" style="color: #c9a43b;"></i> <!-- Darker gold color for starred -->
@@ -28,10 +29,15 @@
                     <i class="far fa-star" style="color: #999999;"></i> <!-- Light grey color for unstarred -->
                     {% endif %}
                 </a>
+                <!-- Move email to trash action -->
                 <a href="{% url 'move_to_trash' email.id %}" class="btn btn-sm" style="background-color: transparent; border: none;">
                     <i class="fas fa-trash" style="color: red;"></i> <!-- Trash icon -->
                 </a>
             </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4" style="text-align: center;">No emails found.</td>
         </tr>
         {% endfor %}
     </tbody>

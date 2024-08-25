@@ -8,16 +8,16 @@ from django.utils.html import escape
 from django.urls import reverse
 from django.utils.timezone import now
 from django.conf import settings
-from .forms import EmailForm, SignUpForm
+from .forms import EmailForm, SignUpForm, UserProfileForm
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .models import Email, EmailTracking, EmailUsage
+from .models import Email, EmailTracking, EmailUsage, UserProfile
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.mail import send_mail
 from django.utils import timezone
 
-DAILY_EMAIL_LIMIT = 7 
+DAILY_EMAIL_LIMIT = 10
 
 @login_required
 def home(request):
@@ -25,22 +25,22 @@ def home(request):
 
 @login_required
 def inbox(request):
-    emails = Email.objects.filter(category='inbox').order_by('-sent_at')
+    emails = Email.objects.filter(user=request.user, category='inbox').order_by('-sent_at')
     return render(request, 'mailer/inbox.html', {'emails': emails})
 
 @login_required
 def sent_emails(request):
-    emails = Email.objects.filter(category='sent').order_by('-sent_at')
+    emails = Email.objects.filter(user=request.user, category='sent').order_by('-sent_at')
     return render(request, 'mailer/sent.html', {'emails': emails})
 
 @login_required
 def draft_emails(request):
-    emails = Email.objects.filter(category='draft').order_by('-sent_at')
+    emails = Email.objects.filter(user=request.user, category='draft').order_by('-sent_at')
     return render(request, 'mailer/drafts.html', {'emails': emails})
 
 @login_required
 def trash_emails(request):
-    emails = Email.objects.filter(category='trash').order_by('-sent_at')
+    emails = Email.objects.filter(user=request.user, category='trash').order_by('-sent_at')
     return render(request, 'mailer/trash.html', {'emails': emails})
 
 @login_required
@@ -87,6 +87,7 @@ def send_email(request):
 
             # Log email sending
             Email.objects.create(
+                user=request.user,
                 recipient=recipient,
                 subject=subject,
                 message=message,
@@ -104,62 +105,54 @@ def send_email(request):
 @login_required
 def save_draft(request):
     if request.method == 'POST':
-        form = EmailForm(request.POST, request.FILES)
+        form = EmailForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
-            recipient = form.cleaned_data['recipient']
-            subject = form.cleaned_data['subject']
-            message = form.cleaned_data['message']
-
-            email = Email(
-                recipient=recipient,
-                subject=subject,
-                message=message,
-                tracking_id=str(uuid.uuid4()),
-                category='draft'
-            )
+            email = form.save(commit=False)
+            email.user = request.user
+            email.category = 'draft'
             email.save()
-
+            messages.success(request, "Draft saved successfully.")
             return redirect('draft_emails')
     else:
-        form = EmailForm()
+        form = EmailForm(user=request.user)
 
     return render(request, 'mailer/send_email.html', {'form': form})
 
 @login_required
 def starred_emails(request):
-    emails = Email.objects.filter(starred=True).order_by('-sent_at')
+    emails = Email.objects.filter(user=request.user, starred=True).order_by('-sent_at')
     return render(request, 'mailer/starred.html', {'emails': emails})
 
 @login_required
 def move_to_trash(request, email_id):
-    email = get_object_or_404(Email, id=email_id)
+    email = get_object_or_404(Email, id=email_id, user=request.user)
     email.category = 'trash'
     email.save()
     return redirect(request.META.get('HTTP_REFERER', 'home'))
 
 @login_required
 def move_to_inbox(request, email_id):
-    email = get_object_or_404(Email, id=email_id)
+    email = get_object_or_404(Email, id=email_id, user=request.user)
     email.category = 'inbox'
     email.save()
     return redirect(request.META.get('HTTP_REFERER', 'home'))
 
 @login_required
 def star_email(request, email_id):
-    email = get_object_or_404(Email, id=email_id)
+    email = get_object_or_404(Email, id=email_id, user=request.user)
     email.starred = not email.starred
     email.save()
     return redirect(request.META.get('HTTP_REFERER', 'home'))
 
 @login_required
 def track_email(request, tracking_id):
-    email = get_object_or_404(Email, tracking_id=tracking_id)
+    email = get_object_or_404(Email, tracking_id=tracking_id, user=request.user)
     tracking, created = EmailTracking.objects.get_or_create(email=email)
     if not tracking.opened:
         tracking.opened = True
         tracking.opened_at = now()
         tracking.save()
-    # Return a 1x1 transparent pixel image
+
     response = HttpResponse(content_type="image/png")
     response.write(base64.b64decode(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wcAAwAB/IX+lwQAAAABJRU5ErkJggg=="
@@ -168,7 +161,7 @@ def track_email(request, tracking_id):
 
 @login_required
 def track_click(request, tracking_id, url):
-    email = get_object_or_404(Email, tracking_id=tracking_id)
+    email = get_object_or_404(Email, tracking_id=tracking_id, user=request.user)
     tracking, created = EmailTracking.objects.get_or_create(email=email)
     if not tracking.clicked:
         tracking.clicked = True
@@ -178,7 +171,7 @@ def track_click(request, tracking_id, url):
 
 @login_required
 def email_analytics(request):
-    emails = Email.objects.all().select_related('emailtracking')
+    emails = Email.objects.filter(user=request.user).select_related('emailtracking')
     return render(request, 'mailer/email_analytics.html', {'emails': emails})
 
 @login_required
@@ -189,7 +182,7 @@ def export_emails_csv(request):
     writer = csv.writer(response)
     writer.writerow(['Recipient', 'Subject', 'Opened', 'Opened At', 'Clicked', 'Clicked At'])
 
-    emails = Email.objects.all()
+    emails = Email.objects.filter(user=request.user)
     for email in emails:
         tracking = getattr(email, 'tracking', None)
         if tracking:
@@ -206,10 +199,14 @@ def export_emails_csv(request):
 
 @login_required
 def delete_forever(request, email_id):
-    email = get_object_or_404(Email, id=email_id, category='trash')
+    email = get_object_or_404(Email, id=email_id, user=request.user, category='trash')
     email.delete()
     return redirect('trash_emails')
 
+@login_required
+def profile_view(request):
+    user_profile, created = UserProfile.objects.get_or_create(user=request.user)
+    return render(request, 'mailer/profile.html', {'profile': user_profile})
 
 def signup(request):
     if request.method == 'POST':
@@ -221,10 +218,6 @@ def signup(request):
     else:
         form = SignUpForm()
     return render(request, 'registration/signup.html', {'form': form})
-
-@login_required
-def profile_view(request):
-    return render(request, 'mailer/profile.html')
 
 def logout_view(request):
     if request.method == 'POST':
@@ -253,3 +246,16 @@ def custom_login(request):
 def success(request):
     return render(request, 'mailer/success.html')
 
+@login_required
+def edit_profile(request):
+    user_profile, created = UserProfile.objects.get_or_create(user=request.user)
+
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, request.FILES, instance=user_profile)
+        if form.is_valid():
+            form.save()
+            return redirect('profile')  # Make sure 'profile' URL name is correctly defined
+    else:
+        form = UserProfileForm(instance=user_profile)
+
+    return render(request, 'mailer/edit_profile.html', {'form': form})

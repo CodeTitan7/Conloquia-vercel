@@ -6,8 +6,9 @@
 {% block content %}
 <div class="jumbotron bg-dark text-white">
     <h1 class="display-4">Welcome to the Mailer App!</h1>
-    <p class="lead">Send and track your emails with ease.</p>
+    <p class="lead">Hello, {{ user.username }}! Send and track your emails with ease.</p>
     <hr class="my-4">
+    <p>You've got {{ drafts_count }} drafts and {{ sent_count }} sent emails.</p>
     <p>Get started by sending an email or checking your email analytics.</p>
     <a class="btn btn-success btn-lg" href="{% url 'send_email' %}" role="button">Send Email</a>
     <a class="btn btn-secondary btn-lg" href="{% url 'email_analytics' %}" role="button">Email Analytics</a>

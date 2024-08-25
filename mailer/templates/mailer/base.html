@@ -152,10 +152,17 @@
             <a href="{% url 'draft_emails' %}">Drafts</a>
             <a href="{% url 'trash_emails' %}">Trash</a>
             <a href="{% url 'starred_emails' %}">Starred</a>
-            <form method="post" action="{% url 'logout' %}" style="display:inline;">
-                {% csrf_token %}
-                <button class="btn" type="submit">Logout</button>
-            </form>
+            
+            {% if user.is_authenticated %}
+                <a href="{% url 'profile' %}">Profile</a>
+                <form method="post" action="{% url 'logout' %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button class="btn" type="submit">Logout</button>
+                </form>
+            {% else %}
+                <a href="{% url 'login' %}">Login</a>
+                <a href="{% url 'signup' %}">Sign Up</a>
+            {% endif %}
         </div>
     </div>
 

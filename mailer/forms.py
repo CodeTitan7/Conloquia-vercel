@@ -1,5 +1,5 @@
 from django import forms
-from .models import Email
+from .models import Email, UserProfile
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 
@@ -17,6 +17,15 @@ class EmailForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if user:
             self.fields['sender_email'].initial = user.email
+        self.user = user
+
+    def save(self, commit=True):
+        email = super().save(commit=False)
+        if self.user:
+            email.user = self.user  # Associate the email with the user
+        if commit:
+            email.save()
+        return email        
 
 class SignUpForm(UserCreationForm):
     email = forms.EmailField(required=True)
@@ -24,3 +33,8 @@ class SignUpForm(UserCreationForm):
     class Meta:
         model = User
         fields = ('username', 'email', 'password1', 'password2')
+
+class UserProfileForm(forms.ModelForm):
+    class Meta:
+        model = UserProfile
+        fields = ['bio', 'profile_picture']     

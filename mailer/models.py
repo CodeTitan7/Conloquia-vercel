@@ -3,8 +3,10 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
+from django.contrib.auth.models import User
 
 class Email(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='emails', default=1)
     recipient = models.EmailField()
     subject = models.CharField(max_length=255)
     message = models.TextField()
@@ -17,7 +19,7 @@ class Email(models.Model):
             ('draft', 'Draft'),
             ('trash', 'Trash'),
         ],
-        default='inbox'
+        default='draft'
     )
     sent_at = models.DateTimeField(null=True, blank=True)
     starred = models.BooleanField(default=False)
@@ -58,3 +60,11 @@ class EmailUsage(models.Model):
     def increment_emails_sent(self):
         self.emails_sent_today += 1
         self.save()
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    bio = models.TextField(blank=True, null=True)
+    profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+
+    def __str__(self):
+        return self.user.username        

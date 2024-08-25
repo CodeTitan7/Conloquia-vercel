@@ -5,13 +5,13 @@
 
 {% block content %}
 <h2>Draft Emails</h2>
-<table class="table">
-    <thead>
+<table class="table table-hover table-striped">
+    <thead class="thead-light">
         <tr>
-            <th>Subject</th>
-            <th>Recipient</th>
-            <th>Date</th>
-            <th>Actions</th>
+            <th style="width: 40%;">Subject</th>
+            <th style="width: 30%;">Recipient</th>
+            <th style="width: 20%;">Date</th>
+            <th style="width: 10%;">Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -19,13 +19,19 @@
         <tr>
             <td>{{ email.subject }}</td>
             <td>{{ email.recipient }}</td>
-            <td>{{ email.sent_at }}</td>
+            <td>{{ email.sent_at|default:"Not Sent" }}</td>
             <td>
+                <!-- Star or unstar email -->
                 <a href="{% url 'star_email' email.id %}" class="btn btn-warning btn-sm">
                     {% if email.starred %}Unstar{% else %}Star{% endif %}
                 </a>
+                <!-- Move email to trash -->
                 <a href="{% url 'move_to_trash' email.id %}" class="btn btn-danger btn-sm">Move to Trash</a>
             </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4" style="text-align: center;">No drafts available.</td>
         </tr>
         {% endfor %}
     </tbody>
