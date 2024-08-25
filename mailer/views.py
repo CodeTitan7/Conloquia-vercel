@@ -259,5 +259,9 @@ def edit_profile(request):
     else:
         form = UserProfileForm(instance=user_profile)
 
-    profile_picture_url = SupabaseStorage().url(user_profile.profile_picture.name) 
+    profile_picture_url = None
+    if user_profile.profile_picture:
+        profile_picture_path = f"profile_pics/{user_profile.profile_picture.name}"
+        profile_picture_url = SupabaseStorage().url(profile_picture_path)
+        
     return render(request, 'mailer/edit_profile.html', {'form': form, 'profile_picture_url': profile_picture_url})
