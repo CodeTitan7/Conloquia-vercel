@@ -16,6 +16,7 @@ from .models import Email, EmailTracking, EmailUsage, UserProfile
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.mail import send_mail
 from django.utils import timezone
+from .storage import SupabaseStorage
 
 DAILY_EMAIL_LIMIT = 10
 
@@ -258,4 +259,5 @@ def edit_profile(request):
     else:
         form = UserProfileForm(instance=user_profile)
 
-    return render(request, 'mailer/edit_profile.html', {'form': form})
+    profile_picture_url = SupabaseStorage().url(user_profile.profile_picture.name) 
+    return render(request, 'mailer/edit_profile.html', {'form': form, 'profile_picture_url': profile_picture_url})
