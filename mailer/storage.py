@@ -3,11 +3,14 @@ from supabase import create_client, Client
 from django.core.files.storage import Storage
 from django.core.files.base import ContentFile
 
+SUPABASE_URL = os.environ.get('SUPABASE_URL')
+SUPABASE_KEY = os.environ.get('SUPABASE_KEY')
+
 class SupabaseStorage(Storage):
     def __init__(self):
         self.client = create_client(
-            os.environ.get('SUPABASE_URL'),
-            os.environ.get('SUPABASE_KEY')
+            SUPABASE_URL,
+            SUPABASE_KEY
         )
         self.bucket = 'user-profile-pictures'
 
