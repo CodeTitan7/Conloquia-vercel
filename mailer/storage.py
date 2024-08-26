@@ -47,3 +47,10 @@ class SupabaseStorage(Storage):
             self.client.storage.from_(self.bucket).remove([name])
         except Exception as e:
             raise Exception(f"Could not delete file: {e}")
+
+    def generate_signed_url(self, file_name, expires_in=3600):
+        try:
+            response = self.client.storage.from_(self.bucket).create_signed_url(file_name, expires_in)
+            return response['signedURL']
+        except Exception as e:
+            raise Exception(f"Could not generate signed URL: {e}")

@@ -3,16 +3,25 @@
 {% block title %}User Profile{% endblock %}
 
 {% block content %}
+    <style>
+        .profile-picture {
+            width: 150px; 
+            height: 150px; 
+            object-fit: cover; 
+            border-radius: 50%; 
+        }
+    </style>
+
     <div class="container mt-4">
         <h1 class="mb-4">{{user.username}}'s Profile</h1>
         
         <div class="row">
             <div class="col-md-4">
-                {% if profile_picture_url  %}
-                    <img src="{{profile_picture_url }}" alt="Profile Picture" class="img-fluid rounded-circle">
+                {% if profile_picture_url %}
+                    <img src="{{profile_picture_url}}" alt="Profile Picture" class="profile-picture img-fluid rounded-circle">
                 {% else %}
                     <div class="text-center">
-                        <p class="text-muted">No profile picture available.</p>
+                        <p class="text-muted">No profile picture available</p>
                     </div>
                 {% endif %}
             </div>

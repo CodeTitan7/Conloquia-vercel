@@ -204,11 +204,6 @@ def delete_forever(request, email_id):
     email.delete()
     return redirect('trash_emails')
 
-@login_required
-def profile_view(request):
-    user_profile, created = UserProfile.objects.get_or_create(user=request.user)
-    return render(request, 'mailer/profile.html', {'profile': user_profile})
-
 def signup(request):
     if request.method == 'POST':
         form = SignUpForm(request.POST)
@@ -248,6 +243,25 @@ def success(request):
     return render(request, 'mailer/success.html')
 
 @login_required
+def profile_view(request):
+    user_profile, created = UserProfile.objects.get_or_create(user=request.user)
+    
+    # Generate the profile picture URL
+    default_image_url = 'https://bhyccgfpceivprheoqen.supabase.co/storage/v1/object/sign/user-profile-pictures/profile_pics/default.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJ1c2VyLXByb2ZpbGUtcGljdHVyZXMvcHJvZmlsZV9waWNzL2RlZmF1bHQucG5nIiwiaWF0IjoxNzI0NjU0NDMxLCJleHAiOjE3MjQ4MjcyMzF9.qZK2qPjZZfcpcbl6boUp29oq5yoEBJg51tDOtj5f5OQ&t=2024-08-26T06%3A43%3A40.665Z'
+    
+    profile_picture_url = default_image_url
+    if user_profile.profile_picture and user_profile.profile_picture.name != 'profile_pics/default.png':
+        try:
+            profile_picture_path = user_profile.profile_picture.name
+            profile_picture_url = SupabaseStorage().generate_signed_url(profile_picture_path, expires_in=10800)
+        except Exception as e:
+            print(f"Error generating profile picture URL: {e}")
+            # Fallback to the default image
+            profile_picture_url = default_image_url
+
+    return render(request, 'mailer/profile.html', {'profile': user_profile, 'profile_picture_url': profile_picture_url})
+
+@login_required
 def edit_profile(request):
     user_profile, created = UserProfile.objects.get_or_create(user=request.user)
 
@@ -259,9 +273,16 @@ def edit_profile(request):
     else:
         form = UserProfileForm(instance=user_profile)
 
-    profile_picture_url = None
-    if user_profile.profile_picture:
-        profile_picture_path = f"profile_pics/{user_profile.profile_picture.name}"
-        profile_picture_url = SupabaseStorage().url(profile_picture_path)
-        
-    return render(request, 'mailer/edit_profile.html', {'form': form, 'profile_picture_url': profile_picture_url})
+    default_image_url = 'https://bhyccgfpceivprheoqen.supabase.co/storage/v1/object/sign/user-profile-pictures/profile_pics/default.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJ1c2VyLXByb2ZpbGUtcGljdHVyZXMvcHJvZmlsZV9waWNzL2RlZmF1bHQucG5nIiwiaWF0IjoxNzI0NjU0NDMxLCJleHAiOjE3MjQ4MjcyMzF9.qZK2qPjZZfcpcbl6boUp29oq5yoEBJg51tDOtj5f5OQ&t=2024-08-26T06%3A43%3A40.665Z'
+
+    profile_picture_url = default_image_url
+    if user_profile.profile_picture and user_profile.profile_picture.name != 'profile_pics/default.png':
+        try:
+            profile_picture_path = user_profile.profile_picture.name
+            profile_picture_url = SupabaseStorage().generate_signed_url(profile_picture_path, expires_in=10800)
+        except Exception as e:
+            print(f"Error generating profile picture URL: {e}")
+            # Ensure that any exceptions revert to the default image
+            profile_picture_url = default_image_url
+
+    return render(request, 'mailer/edit_profile.html',{'form': form,'profile_picture_url': profile_picture_url})
